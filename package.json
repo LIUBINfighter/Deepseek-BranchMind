@@ -1,0 +1,31 @@
+{
+  "name": "deepseek-branchmind",
+  "version": "1.0.0",
+  "description": "实现基于QApair节点（问答对）的树状对话结构",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "coverage": "vitest run --coverage"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.11.16",
+    "d3": "^7.9.0",
+    "typescript": "^5.2.2",
+    "vite": "^5.0.8"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "autoprefixer": "^10.4.17",
+    "jsdom": "^26.0.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "vitest": "^3.0.4"
+  }
+}
