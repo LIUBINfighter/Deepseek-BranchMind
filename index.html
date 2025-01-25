@@ -1,13 +1,72 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>DeepSeek Chat</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>对话树管理</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- 替换 SVG.js 为 D3.js -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .node circle {
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .node circle:hover {
+      r: 25;
+    }
+    .node text {
+      font-size: 12px;
+      pointer-events: none;
+    }
+    .link {
+      fill: none;
+      stroke: #9CA3AF;
+      stroke-width: 2px;
+    }
+  </style>
+</head>
+<body class="h-screen flex bg-gray-50">
+  <!-- 左侧树状导航 -->
+  <div id="tree-nav" class="w-64 p-4 border-r bg-white overflow-auto"></div>
+  
+  <!-- 中间主面板 -->
+  <div class="flex-1 p-4 flex flex-col">
+    <div id="chat-history" class="flex-1 overflow-auto mb-4 space-y-4"></div>
+    
+    <div class="border-t pt-4">
+      <div class="flex gap-2">
+        <input 
+          id="message-input"
+          type="text" 
+          class="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500"
+          placeholder="输入问题..."
+        >
+        <button 
+          id="send-btn"
+          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+        >
+          发送
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧对话树图形面板 -->
+  <div id="graph-panel" class="w-96 border-l bg-white">
+    <div class="p-4 border-b">
+      <h3 class="text-lg font-medium">对话树图形</h3>
+      <div class="flex gap-2 mt-2">
+        <button id="toggle-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
+          显示/隐藏图形
+        </button>
+        <button id="refresh-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
+          刷新图形
+        </button>
+      </div>
+    </div>
+    <div id="graph-container" class="h-[calc(100vh-80px)] overflow-auto"></div>
+  </div>
+
+  <script type="module" src="./src/app.ts"></script>
+</body>
