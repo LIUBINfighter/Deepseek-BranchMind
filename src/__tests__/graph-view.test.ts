@@ -61,11 +61,7 @@ describe('GraphView', () => {
   });
 
   it('should render correct number of nodes', () => {
-    let clickedNodeId = '';
-    graphView.render(mockNodes, (nodeId: string) => {
-      clickedNodeId = nodeId;
-    });
-
+    graphView.render(mockNodes, () => {});
     const nodes = container.querySelectorAll('.node');
     expect(nodes.length).toBe(mockNodes.length);
   });
@@ -86,7 +82,7 @@ describe('GraphView', () => {
     // 模拟点击第一个节点
     const firstNode = container.querySelector('.node circle');
     firstNode?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    
+
     expect(clickedNodeId).toBe('root');
   });
 
@@ -94,12 +90,12 @@ describe('GraphView', () => {
     // 首次渲染
     graphView.render(mockNodes, () => {});
     const initialNodes = container.querySelectorAll('.node');
-    
+
     // 使用更少的节点重新渲染
     const lessNodes = mockNodes.slice(0, 2);
     graphView.render(lessNodes, () => {});
     const updatedNodes = container.querySelectorAll('.node');
-    
+
     expect(updatedNodes.length).toBe(lessNodes.length);
   });
 }); 

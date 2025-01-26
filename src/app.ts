@@ -27,6 +27,13 @@ class AppUI {
       if (e.key === 'Enter') this.handleSend();
     });
     
+    // 绑定切换布局事件
+    const switchLayoutButton = document.getElementById('switch-layout')!;
+    switchLayoutButton.addEventListener('click', () => {
+        this.graphView.toggleLayout(); // 切换布局
+        this.updateGraphView(); // 更新图形视图
+    });
+    
     // 初始化显示
     this.updateUI();
   }
@@ -125,6 +132,65 @@ class AppUI {
     this.graphView.render(treeData, (nodeId: string) => {
       this.navigateTo(nodeId);
     });
+  }
+
+  public toggleLayout() {
+    this.layout = this.layout === 'vertical' ? 'horizontal' : 'vertical'; // 切换布局
+    this.updateGraph(); // 重新渲染图形
+  }
+
+  private updateGraph(nodes: QAPairNode[], onNodeClick: (nodeId: string) => void) {
+    const d3Nodes: D3Node[] = nodes.map(node => ({
+        id: node.id,
+        question: node.question,
+        parentId: node.parentId
+    }));
+
+    const root = d3.stratify<D3Node>()
+        .id(d => d.id)
+        .parentId(d => d.parentId)(d3Nodes);
+
+    const treeLayout = d3.tree<D3Node>().size([this.height, this.width]);
+    treeLayout(root);
+
+    this.g.selectAll('*').remove(); // 清除现有内容
+
+    // 绘制连接线
+    const links = this.g.append('g')
+        .selectAll('path')
+        .data(root.links())
+        .join('path')
+        .attr('class', 'link')
+        .attr('d', this.layout === 'vertical' 
+            ? d3.linkVertical<D3Link>().x(d => d.y).y(d => d.x)
+            : d3.linkHorizontal<D3Link>().x(d => d.x).y(d => d.y)
+        );
+
+    // 创建节点组
+    const nodeGroups = this.g.append('g')
+        .selectAll('g')
+        .data(root.descendants())
+        .join('g')
+        .attr('class', 'node')
+        .attr('transform', d => `translate(${d.y},${d.x})`)
+        .on('click', (event, d) => {
+            event.stopPropagation();
+            onNodeClick(d.id);
+        });
+
+    // 添加节点圆圈
+    nodeGroups.append('circle')
+        .attr('r', 10)
+        .attr('fill', '#4B5563')
+        .attr('stroke', '#1F2937')
+        .attr('stroke-width', 2);
+
+    // 添加节点文本
+    nodeGroups.append('text')
+        .text(d => d.data.question.substring(0, 10) + '...')
+        .attr('dy', 15)
+        .attr('text-anchor', 'middle')
+        .attr('fill', '#1F2937');
   }
 }
 
