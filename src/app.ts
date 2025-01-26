@@ -1,4 +1,4 @@
-import { ConversationTree, QAPairNode } from './qa-models';
+import { ConversationTree, NodeID, QAPairNode } from './qa-models';
 import { GraphView } from './graph-view';
 
 class AppUI {
@@ -76,15 +76,26 @@ class AppUI {
 
   private updateTreeNav() {
     const treeData = this.tree.getTreeData();
-    this.treeNav.innerHTML = treeData
-      .map((node: QAPairNode) => `
-        <div class="p-2 hover:bg-gray-100 cursor-pointer" 
-             style="margin-left: ${this.getNodeLevel(node)}em;" 
-             onclick="window.app.navigateTo('${node.id}')">
-          ${node.question.substring(0, 20)}...
-        </div>
-      `)
-      .join('');
+    const buildTree = (parentId: NodeID | null) => {
+      return treeData
+        .filter(node => node.parentId === parentId)
+        .map(node => {
+          const levelClass = node.parentId === null ? 'root' : `level-${this.getNodeLevel(node)}`;
+          return `
+            <div class="node ${levelClass}" 
+                 style="margin-left: ${this.getNodeLevel(node)}em;" 
+                 onclick="window.app.navigateTo('${node.id}')">
+              ${node.question.substring(0, 20)}...
+            </div>
+            <div class="children">
+              ${buildTree(node.id)}
+            </div>
+          `;
+        })
+        .join('');
+    };
+
+    this.treeNav.innerHTML = buildTree(null);
   }
 
   private getNodeLevel(node: QAPairNode): number {
