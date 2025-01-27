@@ -88,6 +88,9 @@ class AppUI {
         }
     });
     
+    // 绑定控制台命令
+    this.bindConsoleCommands();
+    
     // 初始化显示
     this.updateUI();
   }
@@ -243,7 +246,7 @@ class AppUI {
 
         // 更新UI
         this.updateUI();
-        this.messageInput.value = '';
+        this.messageInput.value = ''; // 清空输入框
         console.log('问题和答案已添加到对话树'); // 调试信息：节点添加成功
     } catch (error) {
         console.error('请求过程中发生错误:', error); // 调试信息：捕获到的错误
@@ -272,26 +275,40 @@ class AppUI {
 
   private updateTreeNav() {
     const treeData = this.tree.getTreeData();
-    const buildTree = (parentId: NodeID | null) => {
-        return treeData
-            .filter(node => node.parentId === parentId && node.type === 'question') // 只显示问题节点
-            .map(node => {
-                const levelClass = node.parentId === null ? 'root' : `level-${this.getNodeLevel(node)}`;
-                return `
-                    <div class="node ${levelClass}" 
-                         style="margin-left: ${this.getNodeLevel(node)}em;" 
-                         onclick="window.app.navigateTo('${node.id}')">
-                      ${node.content.substring(0, 20)}...
-                    </div>
-                    <div class="children">
-                      ${buildTree(node.id)}
-                    </div>
-                `;
-            })
-            .join('');
-    };
+    const nodeMap = new Map<NodeID, QAPairNode>();
 
-    this.treeNav.innerHTML = buildTree(null);
+    // 将所有节点存入 Map 以便快速查找
+    treeData.forEach(node => nodeMap.set(node.id, node));
+
+    // 构建树状导航的 HTML
+    let html = '';
+    const stack: NodeID[] = ['root']; // 从根节点开始
+
+    while (stack.length > 0) {
+        const currentId = stack.pop()!;
+        const currentNode = nodeMap.get(currentId);
+
+        if (currentNode && currentNode.type === 'question') {
+            const levelClass = currentNode.parentId === null ? 'root' : `level-${this.getNodeLevel(currentNode)}`;
+            html += `
+                <div class="node ${levelClass}" 
+                     style="margin-left: ${this.getNodeLevel(currentNode)}em;" 
+                     onclick="window.app.navigateTo('${currentNode.id}')">
+                  ${currentNode.content.substring(0, 20)}...
+                </div>
+            `;
+
+            // 将子节点压入栈中
+            currentNode.children.forEach(childId => {
+                const childNode = nodeMap.get(childId);
+                if (childNode && childNode.type === 'question') {
+                    stack.push(childId);
+                }
+            });
+        }
+    }
+
+    this.treeNav.innerHTML = html;
   }
 
   private getNodeLevel(node: QAPairNode): number {
@@ -391,6 +408,20 @@ class AppUI {
   public openSettingsModal() {
     this.updateConfigDropdown(); // 更新下拉菜单
     this.toggleModal('settings-modal', 'block'); // 显示模态框
+  }
+
+  private bindConsoleCommands() {
+    // 监听控制台输入
+    window.addEventListener('keydown', (event) => {
+      if (event.ctrlKey && event.key === 'l') { // 使用 Ctrl + L 作为命令触发
+        this.logAllNodes();
+      }
+    });
+  }
+
+  private logAllNodes() {
+    const allNodes = this.tree.getTreeData();
+    console.log('当前所有节点的数据:', allNodes);
   }
 }
 
