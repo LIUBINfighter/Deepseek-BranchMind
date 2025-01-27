@@ -6,6 +6,7 @@ interface D3Node extends d3.SimulationNodeDatum {
   question: string;
   parentId: string | null;
   type: string;
+  abstract: string;
 }
 
 interface D3Link extends d3.SimulationLinkDatum<D3Node> {
@@ -46,13 +47,15 @@ export class GraphView {
     // 清空现有图形
     this.g.selectAll('*').remove();
 
-    // 创建 D3 节点数据
     const d3Nodes: D3Node[] = nodes.map(node => ({
       id: node.id,
       question: node.question,
       parentId: node.parentId,
       type: node.type,
+      abstract: node.abstract
     }));
+
+    console.log('Rendering nodes:', d3Nodes);
 
     // 使用 D3 的 stratify 方法构建树形结构
     const root = d3.stratify<D3Node>()
@@ -86,6 +89,7 @@ export class GraphView {
       .on('click', (event, d) => {
         event.stopPropagation();
         onNodeClick(d.id);
+        this.showAbstract(d.data.abstract);
       });
 
     // 添加节点圆圈
@@ -105,5 +109,9 @@ export class GraphView {
 
   public toggleLayout() {
     this.layout = this.layout === 'vertical' ? 'horizontal' : 'vertical';
+  }
+
+  private showAbstract(abstract: string) {
+    // Implementation of showAbstract method
   }
 }

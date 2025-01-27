@@ -81,34 +81,6 @@
       background-color: #4B5563; /* 根节点的深色背景 */
       color: white; /* 根节点文本颜色 */
     }
-    .node.child {
-      background: linear-gradient(to right, #7ee787, #a3d6ff); /* 默认子节点的渐变色 */
-    }
-    .node.level-1 {
-      background: linear-gradient(to right, #7ee787, #0cb54f); /* 第一层子节点的渐变色 */
-    }
-    .node.level-2 {
-      background: linear-gradient(to right, #7ee787, #7ee787); /* 第二层子节点的渐变色 */
-    }
-    .node.level-3 {
-      background: linear-gradient(to right, #7ee787, #fdac54); /* 第三层子节点的渐变色 */
-    }
-    .node.level-4 {
-      background: linear-gradient(to right, #7ee787, #ffa198); /* 第四层子节点的渐变色 */
-    }
-    .node.level-5 {
-      background: linear-gradient(to right, #7ee787, #218bff); /* 第五层子节点的渐变色 */
-    }
-    .node.level-6 {
-      background: linear-gradient(to right, #7ee787, #fa4549); /* 第六层子节点的渐变色 */
-    }
-    .node.level-7 {
-      background-color: #D1FAE5; /* 第七层及以后的子节点的背景色（灰色） */
-    }
-    .node.light {
-      fill: #f3f4f6;
-      stroke: #d1d5db;
-    }
     button {
       background-color: #238636; /* 按钮背景色：暗色主题 */
       color: white; /* 按钮文本色：暗色主题 */
@@ -297,6 +269,14 @@
   width: 50%; /* 宽度 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
 }
+
+.node.question {
+  fill: #1E90FF; /* 问题节点的颜色 */
+}
+
+.node.answer {
+  fill: #00008B; /* 回答节点的颜色 */
+}
   </style>
 </head>
 <body class="h-screen flex bg-gray-50">
@@ -388,8 +368,12 @@
       </div>
   </div>
 
+  <!-- 引入 app.ts -->
   <script type="module" src="./src/app.ts"></script>
+  
+  <!-- 其他依赖于 window.app 的脚本 -->
   <script type="module">
+    // 这里可以使用 window.app
     const toggleThemeButton = document.getElementById('toggle-theme');
     toggleThemeButton.addEventListener('click', () => {
       document.body.classList.toggle('light-mode');
@@ -419,6 +403,13 @@
       clearApiKeyButton.classList.add('bg-red-500'); // 恢复原背景色
       clearApiKeyButton.querySelector('i').classList.remove('fa-trash-alt');
       clearApiKeyButton.querySelector('i').classList.add('fa-check'); // 更改图标为确认图标
+    });
+  </script>
+
+  <!-- 初始化 AppUI 实例 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      window.app = new AppUI();
     });
   </script>
 </body>

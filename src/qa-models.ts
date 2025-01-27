@@ -6,6 +6,8 @@ export interface QAPairNode {
   parentId: NodeID | null;
   type: 'question' | 'answer';
   content: string;
+  title: string;
+  abstract: string;
   children: NodeID[];
   timestamp: number;
 }
@@ -21,6 +23,8 @@ export class ConversationTree {
       parentId: null,
       type: 'question',
       content: '欢迎开始对话',
+      title: '',
+      abstract: '',
       children: [],
       timestamp: Date.now()
     });
@@ -35,6 +39,8 @@ export class ConversationTree {
       parentId,
       type: isQuestion ? 'question' : 'answer',
       content,
+      title: '',
+      abstract: '',
       children: [],
       timestamp: Date.now()
     };

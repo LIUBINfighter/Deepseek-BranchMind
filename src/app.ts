@@ -276,35 +276,34 @@ class AppUI {
   private updateTreeNav() {
     const treeData = this.tree.getTreeData();
     const nodeMap = new Map<NodeID, QAPairNode>();
-
-    // 将所有节点存入 Map 以便快速查找
     treeData.forEach(node => nodeMap.set(node.id, node));
 
-    // 构建树状导航的 HTML
+    // 使用 DFS 栈存储 [节点ID, 当前层级]
+    const stack: Array<[NodeID, number]> = [['root', 0]];
+    const processedNodes = new Set<NodeID>();
     let html = '';
-    const stack: NodeID[] = ['root']; // 从根节点开始
 
     while (stack.length > 0) {
-        const currentId = stack.pop()!;
+        const [currentId, currentLevel] = stack.pop()!;
+        if (processedNodes.has(currentId)) continue;
+        processedNodes.add(currentId);
+
         const currentNode = nodeMap.get(currentId);
+        if (!currentNode) continue;
 
-        if (currentNode && currentNode.type === 'question') {
-            const levelClass = currentNode.parentId === null ? 'root' : `level-${this.getNodeLevel(currentNode)}`;
-            html += `
-                <div class="node ${levelClass}" 
-                     style="margin-left: ${this.getNodeLevel(currentNode)}em;" 
-                     onclick="window.app.navigateTo('${currentNode.id}')">
-                  ${currentNode.content.substring(0, 20)}...
-                </div>
-            `;
+        const nodeClass = currentNode.type === 'question' ? 'node question' : 'node answer';
+        html += `
+            <div class="${nodeClass}" 
+                 style="margin-left: ${currentLevel}em;" 
+                 onclick="window.app.navigateTo('${currentId}'); return false;">
+              <span class="font-bold">${currentNode.type === 'question' ? 'Q:' : 'A:'}</span> ${currentNode.title}
+            </div>
+        `;
 
-            // 将子节点压入栈中
-            currentNode.children.forEach(childId => {
-                const childNode = nodeMap.get(childId);
-                if (childNode && childNode.type === 'question') {
-                    stack.push(childId);
-                }
-            });
+        // 先处理子节点
+        for (let i = currentNode.children.length - 1; i >= 0; i--) {
+            const childId = currentNode.children[i];
+            stack.push([childId, currentLevel + 1]);
         }
     }
 
@@ -329,6 +328,11 @@ class AppUI {
   }
 
   public navigateTo(nodeId: string) {
+    console.log('Navigating to node:', nodeId); // 调试信息
+    if (!this.tree) {
+      console.error('Tree is not initialized');
+      return;
+    }
     this.tree.navigateTo(nodeId);
     this.updateUI();
   }
