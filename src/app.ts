@@ -8,6 +8,8 @@ class AppUI {
   private messageInput: HTMLInputElement;
   private sendButton: HTMLElement;
   private graphView: GraphView;
+  private apiUrlInput: HTMLInputElement;
+  private modelNameInput: HTMLInputElement;
 
   constructor() {
     this.tree = new ConversationTree();
@@ -18,6 +20,13 @@ class AppUI {
     this.messageInput = document.getElementById('message-input') as HTMLInputElement;
     this.sendButton = document.getElementById('send-btn')!;
     
+    // 获取设置元素
+    this.apiUrlInput = document.getElementById('api-url') as HTMLInputElement;
+    this.modelNameInput = document.getElementById('model-name') as HTMLInputElement;
+
+    // 加载配置
+    this.loadSettings();
+
     // 创建 GraphView 实例
     this.graphView = new GraphView('graph-container');
 
@@ -34,25 +43,79 @@ class AppUI {
         this.updateGraphView(); // 更新图形视图
     });
     
+    // 绑定保存设置事件
+    document.getElementById('save-settings')!.addEventListener('click', () => this.saveSettings());
+    
+    // 绑定参数按钮事件
+    document.getElementById('set-parameters')!.addEventListener('click', () => {
+      this.toggleModal('settings-modal', 'block'); // 显示模态框
+    });
+
+    // 绑定关闭按钮事件
+    document.getElementById('close-settings')!.addEventListener('click', () => {
+      console.log('关闭按钮被点击');
+      const modal = document.getElementById('settings-modal')!;
+      modal.style.display = 'none'; // 直接设置 display 为 none
+      console.log('模态框已隐藏');
+    });
+    
     // 初始化显示
     this.updateUI();
   }
 
-  private handleSend() {
+  private loadSettings() {
+    const apiUrl = localStorage.getItem('apiUrl') || 'http://localhost:11434/api/chat';
+    const modelName = localStorage.getItem('modelName') || 'deepseek-r1';
+    
+    this.apiUrlInput.value = apiUrl;
+    this.modelNameInput.value = modelName;
+  }
+
+  private saveSettings() {
+    const apiUrl = this.apiUrlInput.value.trim();
+    const modelName = this.modelNameInput.value.trim();
+    
+    localStorage.setItem('apiUrl', apiUrl);
+    localStorage.setItem('modelName', modelName);
+    alert('设置已保存！');
+  }
+
+  private async handleSend() {
     const question = this.messageInput.value.trim();
     if (!question) return;
 
-    // 模拟AI回答
-    const answer = `这是对问题 "${question}" 的模拟回答`;
-    
-    // 添加新节点
+    const apiUrl = this.apiUrlInput.value.trim();
+    const modelName = this.modelNameInput.value.trim();
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelName,
+        prompt: question
+      }),
+    });
+
+    console.log('Response Status:', response.status);
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Error fetching AI response:', response.statusText, errorText);
+      return;
+    }
+
+    const data = await response.json();
+    console.log('API Response:', data);
+    const answer = data.answer;
+
+    // 添加问题节点
     const currentNode = this.tree.getCurrentConversation().slice(-1)[0];
-    this.tree.addNode(currentNode.id, question, answer);
-    
+    const questionNodeId = this.tree.addNode(currentNode.id, question, true);
+    this.tree.addNode(questionNodeId, answer, false);
+
     // 更新UI
     this.updateUI();
-    
-    // 清空输入
     this.messageInput.value = '';
   }
 
@@ -60,15 +123,12 @@ class AppUI {
     const conversation = this.tree.getCurrentConversation();
     this.chatHistory.innerHTML = conversation
       .map((node: QAPairNode) => `
-        <div class="chat-message">
+        <div class="chat-message ${node.type}">
           <div class="timestamp">
             ${new Date(node.timestamp).toLocaleTimeString()}
           </div>
-          <div class="question">
-            <span class="font-bold">Q:</span> ${node.question}
-          </div>
-          <div class="answer">
-            <span class="font-bold">A:</span> ${node.answer}
+          <div class="${node.type}">
+            <span class="font-bold">${node.type === 'question' ? 'Q:' : 'A:'}</span> ${node.content}
           </div>
         </div>
       `)
@@ -84,22 +144,22 @@ class AppUI {
   private updateTreeNav() {
     const treeData = this.tree.getTreeData();
     const buildTree = (parentId: NodeID | null) => {
-      return treeData
-        .filter(node => node.parentId === parentId)
-        .map(node => {
-          const levelClass = node.parentId === null ? 'root' : `level-${this.getNodeLevel(node)}`;
-          return `
-            <div class="node ${levelClass}" 
-                 style="margin-left: ${this.getNodeLevel(node)}em;" 
-                 onclick="window.app.navigateTo('${node.id}')">
-              ${node.question.substring(0, 20)}...
-            </div>
-            <div class="children">
-              ${buildTree(node.id)}
-            </div>
-          `;
-        })
-        .join('');
+        return treeData
+            .filter(node => node.parentId === parentId && node.type === 'question') // 只显示问题节点
+            .map(node => {
+                const levelClass = node.parentId === null ? 'root' : `level-${this.getNodeLevel(node)}`;
+                return `
+                    <div class="node ${levelClass}" 
+                         style="margin-left: ${this.getNodeLevel(node)}em;" 
+                         onclick="window.app.navigateTo('${node.id}')">
+                      ${node.content.substring(0, 20)}...
+                    </div>
+                    <div class="children">
+                      ${buildTree(node.id)}
+                    </div>
+                `;
+            })
+            .join('');
     };
 
     this.treeNav.innerHTML = buildTree(null);
@@ -191,6 +251,11 @@ class AppUI {
         .attr('dy', 15)
         .attr('text-anchor', 'middle')
         .attr('fill', '#1F2937');
+  }
+
+  private toggleModal(modalId: string, display: string) {
+    const modal = document.getElementById(modalId)!;
+    modal.style.display = display; // 设置模态框的显示状态
   }
 }
 

@@ -95,7 +95,7 @@ export class GraphView {
 
     // 添加节点文本
     nodeGroups.append('text')
-      .text(d => d.data.question.substring(0, 10) + '...')
+      .text(d => d.data.type === 'question' ? d.data.content.substring(0, 10) + '...' : '')
       .attr('dy', 15)
       .attr('text-anchor', 'middle')
       .attr('fill', '#1F2937');
