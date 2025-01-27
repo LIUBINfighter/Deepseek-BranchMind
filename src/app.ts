@@ -10,6 +10,7 @@ class AppUI {
   private graphView: GraphView;
   private apiUrlInput: HTMLInputElement;
   private modelNameInput: HTMLInputElement;
+  private apiKeyInput: HTMLInputElement;
 
   constructor() {
     this.tree = new ConversationTree();
@@ -23,6 +24,7 @@ class AppUI {
     // 获取设置元素
     this.apiUrlInput = document.getElementById('api-url') as HTMLInputElement;
     this.modelNameInput = document.getElementById('model-name') as HTMLInputElement;
+    this.apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
 
     // 加载配置
     this.loadSettings();
@@ -57,6 +59,33 @@ class AppUI {
       const modal = document.getElementById('settings-modal')!;
       modal.style.display = 'none'; // 直接设置 display 为 none
       console.log('模态框已隐藏');
+      this.toggleModal('settings-modal', 'none'); // 隐藏模态框
+    });
+    
+    // 绑定删除所有配置文件按钮事件
+    const deleteAllConfigsButton = document.getElementById('delete-all-configs')!;
+    deleteAllConfigsButton.addEventListener('click', () => {
+        const confirmDelete = confirm('您确定要删除所有配置文件吗？此操作无法撤销。');
+        if (confirmDelete) {
+            for (const key in localStorage) {
+                if (key.startsWith('config_')) {
+                    localStorage.removeItem(key); // 删除所有配置文件
+                }
+            }
+            this.updateConfigDropdown(); // 更新下拉菜单
+            console.log('所有配置文件已删除。'); // 提示用户
+        }
+    });
+    
+    // 绑定清除本地存储按钮事件
+    const clearLocalStorageButton = document.getElementById('clear-local-storage')!;
+    clearLocalStorageButton.addEventListener('click', () => {
+        const confirmDelete = confirm('您确定要删除所有本地存储数据吗？此操作无法撤销。');
+        if (confirmDelete) {
+            localStorage.clear(); // 清除所有本地存储数据
+            this.updateConfigDropdown(); // 更新下拉菜单
+            console.log('所有本地存储数据已清除。'); // 提示用户
+        }
     });
     
     // 初始化显示
@@ -69,67 +98,167 @@ class AppUI {
     
     this.apiUrlInput.value = apiUrl;
     this.modelNameInput.value = modelName;
+
+    // 加载特定API地址的配置
+    const configKey = `config_${apiUrl}`;
+    const config = localStorage.getItem(configKey);
+    if (config) {
+        const parsedConfig = JSON.parse(config);
+        this.apiUrlInput.value = parsedConfig.apiUrl;
+        this.modelNameInput.value = parsedConfig.modelName;
+    }
+
+    // 更新下拉菜单以显示存储的配置文件
+    this.updateConfigDropdown();
+  }
+
+  private updateConfigDropdown() {
+    const configInput = document.getElementById('config-select') as HTMLInputElement;
+    const configOptions = document.getElementById('config-options') as HTMLDataListElement;
+
+    // 清空现有选项
+    configOptions.innerHTML = '';
+
+    // 获取所有存储的配置文件并渲染到下拉菜单
+    for (const key in localStorage) {
+        if (key.startsWith('config_')) {
+            const config = JSON.parse(localStorage.getItem(key)!);
+            const option = document.createElement('option');
+            option.value = key; // 存储的配置文件名
+            option.textContent = config.apiUrl; // 显示API地址
+            configOptions.appendChild(option); // 添加到下拉列表
+        }
+    }
+
+    // 绑定新建配置文件按钮事件
+    const addConfigButton = document.getElementById('add-config')!;
+    addConfigButton.addEventListener('click', () => {
+        const newConfigName = configInput.value.trim();
+        if (newConfigName) {
+            const newConfigKey = `config_${newConfigName}`;
+            const newConfig = {
+                apiUrl: this.apiUrlInput.value,
+                modelName: this.modelNameInput.value
+            };
+            localStorage.setItem(newConfigKey, JSON.stringify(newConfig)); // 存储新配置
+            this.updateConfigDropdown(); // 更新下拉菜单
+            configInput.value = ''; // 清空输入框
+        }
+    });
+
+    // 绑定输入框的变化事件
+    configInput.addEventListener('input', () => {
+        const selectedConfigKey = configInput.value;
+        const selectedConfig = JSON.parse(localStorage.getItem(selectedConfigKey)!);
+        if (selectedConfig) {
+            this.apiUrlInput.value = selectedConfig.apiUrl;
+            this.modelNameInput.value = selectedConfig.modelName;
+        }
+    });
+
+    // 绑定输入框的回车事件
+    configInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            addConfigButton.click(); // 模拟点击新建配置文件按钮
+        }
+    });
   }
 
   private saveSettings() {
     const apiUrl = this.apiUrlInput.value.trim();
     const modelName = this.modelNameInput.value.trim();
     
-    localStorage.setItem('apiUrl', apiUrl);
-    localStorage.setItem('modelName', modelName);
-    alert('设置已保存！');
+    // 获取当前选择的API地址
+    const selectedApiUrl = this.apiUrlInput.value;
+
+    // 存储不同配置文件的逻辑
+    const configKey = `config_${selectedApiUrl}`;
+    const config = {
+        apiUrl: apiUrl,
+        modelName: modelName
+    };
+    
+    localStorage.setItem(configKey, JSON.stringify(config)); // 存储配置
+
+    // 更改按钮文字为"保存成功"
+    const saveButton = document.getElementById('save-settings') as HTMLButtonElement;
+    saveButton.textContent = '保存成功';
+    
+    // 可选：设置一个定时器，几秒后恢复原文字
+    setTimeout(() => {
+        saveButton.textContent = '保存设置';
+    }, 2000);
   }
 
   private async handleSend() {
+    console.log('发送按钮被点击'); // 调试信息：按钮点击事件
     const question = this.messageInput.value.trim();
-    if (!question) return;
+    console.log('用户输入的问题:', question); // 调试信息：用户输入的问题
+    if (!question) {
+        console.warn('输入为空，未发送请求'); // 调试信息：输入为空
+        return;
+    }
 
     const apiUrl = this.apiUrlInput.value.trim();
     const modelName = this.modelNameInput.value.trim();
+    console.log('API URL:', apiUrl); // 调试信息：API URL
+    console.log('模型名称:', modelName); // 调试信息：模型名称
 
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelName,
-        prompt: question
-      }),
-    });
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                model: modelName,
+                prompt: question
+            }),
+        });
 
-    console.log('Response Status:', response.status);
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Error fetching AI response:', response.statusText, errorText);
-      return;
+        console.log('Response Status:', response.status); // 调试信息：响应状态
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error fetching AI response:', response.statusText, errorText); // 调试信息：错误信息
+            return;
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data); // 调试信息：API 返回的数据
+        const answer = data.answer;
+
+        // 添加问题节点
+        const currentNode = this.tree.getCurrentConversation().slice(-1)[0];
+
+        // 检查是否是第一个问题，如果是，则创建根节点
+        let questionNodeId;
+        if (this.tree.getCurrentConversation().length === 0) {
+            // 创建根节点
+            questionNodeId = this.tree.addNode(null, question, true); // 第一个问题成为根节点
+        } else {
+            questionNodeId = this.tree.addNode(currentNode.id, question, true); // 其他问题添加到当前节点
+        }
+        
+        this.tree.addNode(questionNodeId, answer, false);
+
+        // 更新UI
+        this.updateUI();
+        this.messageInput.value = '';
+        console.log('问题和答案已添加到对话树'); // 调试信息：节点添加成功
+    } catch (error) {
+        console.error('请求过程中发生错误:', error); // 调试信息：捕获到的错误
     }
-
-    const data = await response.json();
-    console.log('API Response:', data);
-    const answer = data.answer;
-
-    // 添加问题节点
-    const currentNode = this.tree.getCurrentConversation().slice(-1)[0];
-    const questionNodeId = this.tree.addNode(currentNode.id, question, true);
-    this.tree.addNode(questionNodeId, answer, false);
-
-    // 更新UI
-    this.updateUI();
-    this.messageInput.value = '';
   }
 
   private updateUI() {
     const conversation = this.tree.getCurrentConversation();
     this.chatHistory.innerHTML = conversation
       .map((node: QAPairNode) => `
-        <div class="chat-message ${node.type}">
+        <div class="chat-bubble ${node.type}">
           <div class="timestamp">
             ${new Date(node.timestamp).toLocaleTimeString()}
           </div>
-          <div class="${node.type}">
             <span class="font-bold">${node.type === 'question' ? 'Q:' : 'A:'}</span> ${node.content}
-          </div>
         </div>
       `)
       .join('');
@@ -255,7 +384,13 @@ class AppUI {
 
   private toggleModal(modalId: string, display: string) {
     const modal = document.getElementById(modalId)!;
-    modal.style.display = display; // 设置模态框的显示状态
+    modal.style.display = display; // 控制模态框的显示或隐藏
+  }
+
+  // 在模态框打开时调用此方法以更新下拉菜单
+  public openSettingsModal() {
+    this.updateConfigDropdown(); // 更新下拉菜单
+    this.toggleModal('settings-modal', 'block'); // 显示模态框
   }
 }
 

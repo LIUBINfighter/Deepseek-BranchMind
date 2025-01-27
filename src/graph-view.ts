@@ -5,6 +5,7 @@ interface D3Node extends d3.SimulationNodeDatum {
   id: string;
   question: string;
   parentId: string | null;
+  type: string;
 }
 
 interface D3Link extends d3.SimulationLinkDatum<D3Node> {
@@ -50,6 +51,7 @@ export class GraphView {
       id: node.id,
       question: node.question,
       parentId: node.parentId,
+      type: node.type,
     }));
 
     // 使用 D3 的 stratify 方法构建树形结构
@@ -89,7 +91,7 @@ export class GraphView {
     // 添加节点圆圈
     nodeGroups.append('circle')
       .attr('r', 10)
-      .attr('fill', '#4B5563')
+      .attr('fill', d => d.data.type === 'question' ? '#1E90FF' : '#32CD32')
       .attr('stroke', '#1F2937')
       .attr('stroke-width', 2);
 
