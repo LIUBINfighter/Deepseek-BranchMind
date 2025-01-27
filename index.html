@@ -7,7 +7,42 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 替换 SVG.js 为 D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    body {
+      background-color: #0d1117; /* 暗色主题背景 */
+      color: #c9d1d9; /* 暗色主题文本 */
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .light-mode {
+      background-color: #00ADB5; /* 亮色主题背景 */
+      color: #24292f; /* 亮色主题文本 */
+    }
+    /* 左侧树状导航 */
+    #tree-nav {
+      background-color: #1f1f1f; /* 左侧导航背景色：暗色主题 */
+      border-right: 1px solid #30363d; /* 边框颜色：暗色主题 */
+    }
+    .light-mode #tree-nav {
+      background-color: #e1e4e8; /* 左侧导航背景色：亮色主题 */
+      border-right: 1px solid #e1e4e8; /* 边框颜色：亮色主题 */
+    }
+    /* 中间主面板 */
+    .flex-1 {
+      background-color: #2d2d2d; /* 暗色主题 */
+      border: 1px solid #30363d; /* 边框颜色 */
+    }
+    .light-mode .flex-1 {
+      background-color: #e1e4e8; /* 中间主面板背景色：亮色主题 */
+    }
+    /* 右侧对话树图形面板 */
+    #graph-panel {
+      background-color: #1f1f1f; /* 暗色主题 */
+      border-left: 1px solid #30363d; /* 边框颜色 */
+    }
+    .light-mode #graph-panel {
+      background-color: #e1e4e8; /* 右侧对话树图形面板背景色：亮色主题 */
+    }
     .node circle {
       cursor: pointer;
       transition: all 0.3s ease;
@@ -28,6 +63,18 @@
       padding: 8px;
       border-radius: 4px;
       margin-left: 20px; /* 默认左边距 */
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+      background-color: #4B5563; /* 节点背景色：暗色主题 */
+      color: #ffffff; /* 节点文本色：暗色主题 */
+    }
+    .light-mode .node {
+      background-color: #e1e4e8; /* 节点背景色：亮色主题 */
+      color: #24292f; /* 节点文本色：亮色主题 */
+    }
+    .node:hover {
+      background-color: #A3B8A9; /* 鼠标悬停时的背景色 */
+      color: #1F2937; /* 鼠标悬停时的字体颜色 */
     }
     .node.root {
       border: 2px solid #4B5563; /* 根节点的边框 */
@@ -35,26 +82,187 @@
       color: white; /* 根节点文本颜色 */
     }
     .node.child {
-      background-color: #F9FAFB; /* 默认子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #a3d6ff); /* 默认子节点的渐变色 */
     }
     .node.level-1 {
-      background-color: #E5E7EB; /* 第一层子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #0cb54f); /* 第一层子节点的渐变色 */
     }
     .node.level-2 {
-      background-color: #D1FAE5; /* 第二层子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #7ee787); /* 第二层子节点的渐变色 */
     }
     .node.level-3 {
-      background-color: #BBF7D0; /* 第三层子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #fdac54); /* 第三层子节点的渐变色 */
     }
     .node.level-4 {
-      background-color: #A7F3D0; /* 第四层子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #ffa198); /* 第四层子节点的渐变色 */
     }
     .node.level-5 {
-      background-color: #6EE7B7; /* 第五层子节点的背景色 */
+      background: linear-gradient(to right, #7ee787, #218bff); /* 第五层子节点的渐变色 */
     }
-    .node:hover {
-      background-color: #D1FAE5; /* 鼠标悬停时的背景色 */
+    .node.level-6 {
+      background: linear-gradient(to right, #7ee787, #fa4549); /* 第六层子节点的渐变色 */
     }
+    .node.level-7 {
+      background-color: #D1FAE5; /* 第七层及以后的子节点的背景色（灰色） */
+    }
+    .node.light {
+      fill: #f3f4f6;
+      stroke: #d1d5db;
+    }
+    button {
+      background-color: #238636; /* 按钮背景色：暗色主题 */
+      color: white; /* 按钮文本色：暗色主题 */
+    }
+    button:hover {
+      background-color: #2ea043; /* 悬停时按钮背景色：暗色主题 */
+    }
+    .light-mode button {
+      background-color: #2da44f; /* 按钮背景色：亮色主题 */
+      color: white; /* 按钮文本色：亮色主题 */
+    }
+    .light-mode button:hover {
+      background-color: #2c964a; /* 悬停时按钮背景色：亮色主题 */
+    }
+    .toggle-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: #f9f9f9; /* 按钮背景色：暗色主题 */
+      color: #24292f; /* 按钮文本色：亮色主题 */
+      border: none;
+      padding: 5px 10px; /* 缩小按钮的内边距 */
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .light-mode .toggle-button {
+      background-color: #238636; /* 按钮背景色：亮色主题 */
+      color: white; /* 按钮文本色：亮色主题 */
+    }
+    .toggle-button:hover {
+      background-color: #2ea043; /* 悬停时按钮背景色：暗色主题 */
+    }
+    /* 按钮按下效果 */
+    #send-btn:active {
+      transform: scale(0.8);
+    }
+
+    /* 输入框焦点状态 */
+    #message-input:focus {
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+      /* 暗色模式 */
+      &.dark {
+        background: #450a0a;
+        color: #fca5a5;
+      }
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      border-radius: 1rem;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #4B5563; /* 边框颜色 */
+      transition: background-color 0.3s ease; /* 背景色过渡 */
+      background: #2d2d2d; /* 对话框背景色 */
+      color: #e0e0e0; /* 文本色 */
+    }
+
+    .chat-bubble:hover {
+      background-color: #2c2c2c; /* 悬停时的背景色 */
+    }
+
+    .chat-bubble.user {
+      background: #3b82f6; /* 用户消息背景色 */
+      color: white; /* 用户消息文本色 */
+      margin-left: auto; /* 用户消息右对齐 */
+    }
+    
+    .chat-bubble.assistant {
+      background: #374151; /* 助手消息背景色 */
+      color: white; /* 助手消息文本色 */
+      margin-right: auto; /* 助手消息左对齐 */
+    }
+
+    /* 输入框样式统一 */
+    #message-input.dark {
+      background: #1f1f1f; /* 输入框背景色 */
+      border-color: #4a5568; /* 边框颜色 */
+      color: #e2e8f0; /* 输入框文本色 */
+    }
+
+    /* 节点可视化优化 */
+    .node.light {
+      fill: #f3f4f6; /* 节点填充色 */
+      stroke: #d1d5db; /* 节点边框色 */
+    }
+
+    /* 状态反馈 */
+    #send-btn:active {
+      transform: scale(0.98);
+    }
+
+    #message-input:focus {
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+
+    /* 主题切换过渡 */
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* 错误状态设计 */
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .error-message.dark {
+      background: #450a0a;
+      color: #fca5a5;
+    }
+
+    .light-mode .toggle-button {
+      background-color: #2da44f; /* 亮色主题 */
+      color: white;
+    }
+
+    .light-mode .toggle-button:hover {
+      background-color: #2c964a; /* 亮色主题悬停 */
+    }
+
+    .light-mode .chat-bubble {
+  background: #ffffff; /* 亮色模式下的背景色 */
+  color: #333333; /* 亮色模式下的文本色，稍微深一点，提高对比度 */
+  border: 1px solid #d1d5db; /* 亮色模式下的边框颜色 */
+}
+
+.light-mode .chat-bubble.user {
+  background: #e0f7fa; /* 用户消息亮色背景 */
+}
+
+.light-mode .chat-bubble.assistant {
+  background: #f5f5f5; /* 助手消息亮色背景，稍微浅一点，与用户消息区分 */
+}
+
+.chat-message {
+  background-color: white; /* 背景色 */
+  padding: 1rem; /* 内边距 */
+  border-radius: 0.5rem; /* 圆角 */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 阴影 */
+  margin-bottom: 1rem; /* 下边距 */
+}
+.timestamp {
+  color: gray; /* 时间戳颜色 */
+  margin-bottom: 0.5rem; /* 下边距 */
+}
+.question, .answer {
+  margin-bottom: 0.5rem; /* 下边距 */
+}
   </style>
 </head>
 <body class="h-screen flex bg-gray-50">
@@ -63,7 +271,9 @@
   
   <!-- 中间主面板 -->
   <div class="flex-1 p-4 flex flex-col">
-    <div id="chat-history" class="flex-1 overflow-auto mb-4 space-y-4"></div>
+    <div id="chat-history" class="flex-1 overflow-auto mb-4 space-y-4">
+      <!-- 聊天记录将被插入到这里 -->
+    </div>
     
     <div class="border-t pt-4">
       <div class="flex gap-2">
@@ -75,10 +285,10 @@
         >
         <button 
           id="send-btn"
-          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-600 transition-colors"
         >
           发送
-        </button>
+        </button> <!-- 发送按钮，内容待定 -->
       </div>
     </div>
   </div>
@@ -88,16 +298,16 @@
     <div class="p-4 border-b">
       <h3 class="text-lg font-medium">对话树图形</h3>
       <div class="flex gap-2 mt-2">
-        <button id="toggle-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
+        <button id="toggle-graph" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
           显示/隐藏
         </button>
-        <button id="refresh-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
+        <button id="refresh-graph" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
           刷新图形
         </button>
-        <button id="switch-layout" class="text-sm px-3 py-1 bg-gray-100 rounded">
+        <button id="switch-layout" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
           切换布局
         </button>
-        <button id="set-parameters" class="text-sm px-3 py-1 bg-gray-100 rounded">
+        <button id="set-parameters" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
           参数
         </button>
       </div>
@@ -105,5 +315,22 @@
     <div id="graph-container" class="h-[calc(100vh-80px)] overflow-auto"></div>
   </div>
 
+  <!-- 切换明暗色模式按钮 -->
+  <button id="toggle-theme" class="toggle-button" title="切换明暗色模式" style="width: 50px; height: 50px; border-radius: 20px;">
+    <i class="fas fa-sun"></i> <!-- 太阳图标 -->
+    <i class="fas fa-moon" style="display: none;"></i> <!-- 月亮图标，初始隐藏 -->
+  </button>
+
   <script type="module" src="./src/app.ts"></script>
+  <script type="module">
+    const toggleThemeButton = document.getElementById('toggle-theme');
+    toggleThemeButton.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      const sunIcon = toggleThemeButton.querySelector('.fa-sun');
+      const moonIcon = toggleThemeButton.querySelector('.fa-moon');
+      sunIcon.style.display = isLightMode ? 'none' : 'block';
+      moonIcon.style.display = isLightMode ? 'block' : 'none';
+    });
+  </script>
 </body>

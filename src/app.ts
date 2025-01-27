@@ -60,14 +60,14 @@ class AppUI {
     const conversation = this.tree.getCurrentConversation();
     this.chatHistory.innerHTML = conversation
       .map((node: QAPairNode) => `
-        <div class="bg-white p-4 rounded shadow mb-4">
-          <div class="text-gray-600 mb-2">
+        <div class="chat-message">
+          <div class="timestamp">
             ${new Date(node.timestamp).toLocaleTimeString()}
           </div>
-          <div class="mb-2">
+          <div class="question">
             <span class="font-bold">Q:</span> ${node.question}
           </div>
-          <div>
+          <div class="answer">
             <span class="font-bold">A:</span> ${node.answer}
           </div>
         </div>
