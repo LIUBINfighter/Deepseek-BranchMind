@@ -7,7 +7,42 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 替换 SVG.js 为 D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
+    body {
+      background-color: #0d1117; /* 暗色主题背景 */
+      color: #c9d1d9; /* 暗色主题文本 */
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .light-mode {
+      background-color: #00ADB5; /* 亮色主题背景 */
+      color: #24292f; /* 亮色主题文本 */
+    }
+    /* 左侧树状导航 */
+    #tree-nav {
+      background-color: #1f1f1f; /* 左侧导航背景色：暗色主题 */
+      border-right: 1px solid #30363d; /* 边框颜色：暗色主题 */
+    }
+    .light-mode #tree-nav {
+      background-color: #e1e4e8; /* 左侧导航背景色：亮色主题 */
+      border-right: 1px solid #e1e4e8; /* 边框颜色：亮色主题 */
+    }
+    /* 中间主面板 */
+    .flex-1 {
+      background-color: #2d2d2d; /* 暗色主题 */
+      border: 1px solid #30363d; /* 边框颜色 */
+    }
+    .light-mode .flex-1 {
+      background-color: #e1e4e8; /* 中间主面板背景色：亮色主题 */
+    }
+    /* 右侧对话树图形面板 */
+    #graph-panel {
+      background-color: #1f1f1f; /* 暗色主题 */
+      border-left: 1px solid #30363d; /* 边框颜色 */
+    }
+    .light-mode #graph-panel {
+      background-color: #e1e4e8; /* 右侧对话树图形面板背景色：亮色主题 */
+    }
     .node circle {
       cursor: pointer;
       transition: all 0.3s ease;
@@ -24,6 +59,224 @@
       stroke: #9CA3AF;
       stroke-width: 2px;
     }
+    .node {
+      padding: 8px;
+      border-radius: 4px;
+      margin-left: 20px; /* 默认左边距 */
+      cursor: pointer;
+      transition: background-color 0.3s, color 0.3s;
+      background-color: #4B5563; /* 节点背景色：暗色主题 */
+      color: #ffffff; /* 节点文本色：暗色主题 */
+    }
+    .light-mode .node {
+      background-color: #e1e4e8; /* 节点背景色：亮色主题 */
+      color: #24292f; /* 节点文本色：亮色主题 */
+    }
+    .node:hover {
+      background-color: #A3B8A9; /* 鼠标悬停时的背景色 */
+      color: #1F2937; /* 鼠标悬停时的字体颜色 */
+    }
+    .node.root {
+      border: 2px solid #4B5563; /* 根节点的边框 */
+      background-color: #4B5563; /* 根节点的深色背景 */
+      color: white; /* 根节点文本颜色 */
+    }
+    button {
+      background-color: #238636; /* 按钮背景色：暗色主题 */
+      color: white; /* 按钮文本色：暗色主题 */
+    }
+    button:hover {
+      background-color: #2ea043; /* 悬停时按钮背景色：暗色主题 */
+    }
+    .light-mode button {
+      background-color: #2da44f; /* 按钮背景色：亮色主题 */
+      color: white; /* 按钮文本色：亮色主题 */
+    }
+    .light-mode button:hover {
+      background-color: #2c964a; /* 悬停时按钮背景色：亮色主题 */
+    }
+    .toggle-button {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      background-color: #f9f9f9; /* 按钮背景色：暗色主题 */
+      color: #24292f; /* 按钮文本色：亮色主题 */
+      border: none;
+      padding: 5px 10px; /* 缩小按钮的内边距 */
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .light-mode .toggle-button {
+      background-color: #238636; /* 按钮背景色：亮色主题 */
+      color: white; /* 按钮文本色：亮色主题 */
+    }
+    .toggle-button:hover {
+      background-color: #2ea043; /* 悬停时按钮背景色：暗色主题 */
+    }
+    /* 按钮按下效果 */
+    #send-btn:active {
+      transform: scale(0.8);
+    }
+
+    /* 输入框焦点状态 */
+    #message-input:focus {
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+      /* 暗色模式 */
+      &.dark {
+        background: #450a0a;
+        color: #fca5a5;
+      }
+    }
+
+    .chat-bubble {
+      max-width: 80%;
+      border-radius: 1rem;
+      padding: 0.75rem 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border: 1px solid #4B5563; /* 边框颜色 */
+      transition: background-color 0.3s ease; /* 背景色过渡 */
+      color: #e0e0e0; /* 文本色 */
+      background: #2d2d2d; /* 对话框背景色 */
+    }
+
+    .chat-bubble:hover {
+      background-color: #2c2c2c; /* 悬停时的背景色 */
+    }
+
+    /* 用户消息气泡 */
+    .chat-bubble.question {
+      background: #3b82f6; /* 用户消息背景色 */
+      color: white; /* 用户消息文本色 */
+      margin-left: auto; /* 用户消息右对齐 */
+    }
+
+    /* 助手消息气泡 */
+    .chat-bubble.answer {
+      background: #374151; /* 助手消息背景色 */
+      color: white; /* 助手消息文本色 */
+      margin-right: auto; /* 助手消息左对齐 */
+    }
+
+    /* 提示消息气泡 */
+    .chat-bubble.tip {
+      background: #f59e0b; /* 提示消息背景色 */
+      color: white; /* 提示消息文本色 */
+      margin: auto; /* 提示消息居中对齐 */
+    }
+
+    /* 输入框样式统一 */
+    #message-input.dark {
+      background: #1f1f1f; /* 输入框背景色 */
+      border-color: #4a5568; /* 边框颜色 */
+      color: #e2e8f0; /* 输入框文本色 */
+    }
+
+    /* 节点可视化优化 */
+    .node.light {
+      fill: #f3f4f6; /* 节点填充色 */
+      stroke: #d1d5db; /* 节点边框色 */
+    }
+
+    /* 状态反馈 */
+    #send-btn:active {
+      transform: scale(0.98);
+    }
+
+    #message-input:focus {
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    }
+
+    /* 主题切换过渡 */
+    body {
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* 错误状态设计 */
+    .error-message {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+    .error-message.dark {
+      background: #450a0a;
+      color: #fca5a5;
+    }
+
+    .light-mode .toggle-button {
+      background-color: #2da44f; /* 亮色主题 */
+      color: white;
+    }
+
+    .light-mode .toggle-button:hover {
+      background-color: #2c964a; /* 亮色主题悬停 */
+    }
+
+    .light-mode .chat-bubble {
+  background: #ffffff; /* 亮色模式下的背景色 */
+  color: #333333; /* 亮色模式下的文本色，稍微深一点，提高对比度 */
+  border: 1px solid #d1d5db; /* 亮色模式下的边框颜色 */
+}
+
+.light-mode .chat-bubble.user {
+  background: #e0f7fa; /* 用户消息亮色背景 */
+}
+
+.light-mode .chat-bubble.assistant {
+  background: #f5f5f5; /* 助手消息亮色背景，稍微浅一点，与用户消息区分 */
+}
+
+.timestamp {
+  color: gray; /* 时间戳颜色 */
+  margin-bottom: 0.5rem; /* 下边距 */
+}
+
+
+#settings-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000; /* 确保模态框在其他元素之上 */
+}
+
+.hidden {
+  display: none; /* 确保模态框隐藏 */
+}
+
+.modal-position{
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.modal-content {
+  background-color: white;
+  padding: 1rem; /* 内边距 */
+  border-radius: 0.5rem; /* 圆角 */
+  max-height: 80%; /* 最大高度 */
+  overflow-y: auto; /* 超出内容时滚动 */
+  width: 50%; /* 宽度 */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
+}
+
+.node.question {
+  fill: #1E90FF; /* 问题节点的颜色 */
+}
+
+.node.answer {
+  fill: #00008B; /* 回答节点的颜色 */
+}
   </style>
 </head>
 <body class="h-screen flex bg-gray-50">
@@ -32,7 +285,9 @@
   
   <!-- 中间主面板 -->
   <div class="flex-1 p-4 flex flex-col">
-    <div id="chat-history" class="flex-1 overflow-auto mb-4 space-y-4"></div>
+    <div id="chat-history" class="flex-1 overflow-auto mb-4 space-y-4">
+      <!-- 聊天记录将被插入到这里 -->
+    </div>
     
     <div class="border-t pt-4">
       <div class="flex gap-2">
@@ -44,10 +299,10 @@
         >
         <button 
           id="send-btn"
-          class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-600 transition-colors"
         >
           发送
-        </button>
+        </button> <!-- 发送按钮，内容待定 -->
       </div>
     </div>
   </div>
@@ -57,16 +312,104 @@
     <div class="p-4 border-b">
       <h3 class="text-lg font-medium">对话树图形</h3>
       <div class="flex gap-2 mt-2">
-        <button id="toggle-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
-          显示/隐藏图形
-        </button>
-        <button id="refresh-graph" class="text-sm px-3 py-1 bg-gray-100 rounded">
+        <!-- <button id="toggle-graph" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
+          显示/隐藏
+        </button> -->
+        <button id="refresh-graph" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;">
           刷新图形
+        </button>
+        <button id="switch-layout" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;" title="横向/纵向">
+          切换布局
+        </button>
+        <button id="set-parameters" class="text-sm px-3 py-1 rounded" style="background-color: #2da44f; color: white; transition: background-color 0.3s;" title="添加和修改模型参数 url等">
+          参数
+        </button>
+        <button id="clear-local-storage" class="text-sm px-3 py-1 rounded" style="background-color: red; color: white; transition: background-color 0.3s;" title="删除所有本地存储数据">
+          <i class="fas fa-trash"></i>
         </button>
       </div>
     </div>
     <div id="graph-container" class="h-[calc(100vh-80px)] overflow-auto"></div>
   </div>
 
+  <!-- 切换明暗色模式按钮 -->
+<!--   
+  <button id="toggle-theme" class="toggle-button" title="切换明暗色模式" style="width: 50px; height: 50px; border-radius: 20px;">
+    <i class="fas fa-sun"></i> 
+    <i class="fas fa-moon" style="display: none;"></i> 
+  </button> -->
+
+
+  <div id="settings-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="modal-content modal-position">
+      <h3 class="text-lg font-medium">设置</h3>
+      <div class="mt-2">
+        <label for="config-select" class="block">配置文件:</label>
+        <input id="config-select" type="text" class="border rounded p-2 w-full" placeholder="输入配置文件名" />
+        <button id="add-config" class="bg-green-500 text-white rounded p-2">新建配置文件</button>
+      </div>
+      <datalist id="config-options"></datalist>
+      <div class="mt-2">
+        <label for="api-url" class="block">API 地址:</label>
+        <input id="api-url" type="text" class="border rounded p-2 w-full" placeholder="输入API地址" value="https://api.ollama.local" />
+      </div>
+      <div class="mt-2">
+        <label for="model-name" class="block">模型名称:</label>
+        <input id="model-name" type="text" class="border rounded p-2 w-full" placeholder="输入模型名称" />
+      </div>
+      <div class="mt-2 items-center">
+        <label for="api-key" class="block">API-KEY:</label>
+        <input id="api-key" type="text" class="border rounded p-2 w-full" placeholder="(选填 保存在本地)" />
+        </button>
+      </div>
+      <button id="delete-all-configs" class="mt-2 bg-red-500 text-white rounded p-2">删除所有配置文件</button>
+      <button id="save-settings" class="mt-2 bg-blue-500 text-white rounded p-2">保存设置</button>
+      <button id="close-settings" class="mt-2 bg-red-500 text-white rounded p-2">关闭</button>
+      </div>
+  </div>
+
+  <!-- 引入 app.ts -->
   <script type="module" src="./src/app.ts"></script>
+  
+  <!-- 其他依赖于 window.app 的脚本 -->
+  <script type="module">
+    // 这里可以使用 window.app
+    const toggleThemeButton = document.getElementById('toggle-theme');
+    toggleThemeButton.addEventListener('click', () => {
+      document.body.classList.toggle('light-mode');
+      const isLightMode = document.body.classList.contains('light-mode');
+      const sunIcon = toggleThemeButton.querySelector('.fa-sun');
+      const moonIcon = toggleThemeButton.querySelector('.fa-moon');
+      sunIcon.style.display = isLightMode ? 'none' : 'block';
+      moonIcon.style.display = isLightMode ? 'block' : 'none';
+    });
+
+    const toggleModal = (isVisible) => {
+      const modal = document.getElementById('settings-modal');
+      if (modal) {
+        modal.classList.toggle('hidden', !isVisible); // 根据 isVisible 控制显示或隐藏
+      }
+    };
+
+    document.getElementById('set-parameters').addEventListener('click', () => toggleModal(true)); // 显示模态框
+    document.getElementById('close-settings').addEventListener('click', () => toggleModal(false)); // 隐藏模态框
+
+    const clearApiKeyButton = document.getElementById('clear-api-key');
+    clearApiKeyButton.addEventListener('click', () => {
+      // 删除逻辑
+      document.getElementById('api-key').value = ''; // 清空 API-KEY 输入框
+      localStorage.removeItem('apiKey'); // 从 localStorage 中删除 API-KEY
+      clearApiKeyButton.classList.remove('border-red-500', 'bg-gray-300', 'text-white'); // 恢复原样式
+      clearApiKeyButton.classList.add('bg-red-500'); // 恢复原背景色
+      clearApiKeyButton.querySelector('i').classList.remove('fa-trash-alt');
+      clearApiKeyButton.querySelector('i').classList.add('fa-check'); // 更改图标为确认图标
+    });
+  </script>
+
+  <!-- 初始化 AppUI 实例 -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      window.app = new AppUI();
+    });
+  </script>
 </body>

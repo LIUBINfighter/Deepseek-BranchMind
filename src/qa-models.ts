@@ -4,8 +4,10 @@ export type NodeID = string;
 export interface QAPairNode {
   id: NodeID;
   parentId: NodeID | null;
-  question: string;
-  answer: string;
+  type: 'question' | 'answer';
+  content: string;
+  title: string;
+  abstract: string;
   children: NodeID[];
   timestamp: number;
 }
@@ -19,22 +21,26 @@ export class ConversationTree {
     this.nodes.set('root', {
       id: 'root',
       parentId: null,
-      question: '欢迎开始对话',
-      answer: '请提出你的第一个问题',
+      type: 'question',
+      content: '欢迎开始对话',
+      title: '',
+      abstract: '',
       children: [],
       timestamp: Date.now()
     });
   }
 
-  addNode(parentId: NodeID, question: string, answer: string): NodeID {
+  addNode(parentId: NodeID, content: string, isQuestion: boolean): NodeID {
     const newNodeId = crypto.randomUUID();
     const parent = this.nodes.get(parentId)!;
     
     const newNode: QAPairNode = {
       id: newNodeId,
       parentId,
-      question,
-      answer,
+      type: isQuestion ? 'question' : 'answer',
+      content,
+      title: '',
+      abstract: '',
       children: [],
       timestamp: Date.now()
     };

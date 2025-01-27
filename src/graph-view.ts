@@ -5,6 +5,8 @@ interface D3Node extends d3.SimulationNodeDatum {
   id: string;
   question: string;
   parentId: string | null;
+  type: string;
+  abstract: string;
 }
 
 interface D3Link extends d3.SimulationLinkDatum<D3Node> {
@@ -16,130 +18,100 @@ export class GraphView {
   private svg: d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
   private width: number;
   private height: number;
-  private simulation: d3.Simulation<D3Node, D3Link>;
   private g: d3.Selection<SVGGElement, unknown, HTMLElement, any>;
-  private zoom: d3.ZoomBehavior<SVGSVGElement, unknown>;
+  private layout: 'vertical' | 'horizontal';
 
-  constructor(containerId: string) {
+  constructor(containerId: string, layout: 'vertical' | 'horizontal' = 'vertical') {
     const container = document.getElementById(containerId)!;
     this.width = container.clientWidth;
     this.height = container.clientHeight;
+    this.layout = layout;
 
     // 创建SVG容器
     this.svg = d3.select(`#${containerId}`)
       .append('svg')
       .attr('width', '100%')
       .attr('height', '100%')
-      .attr('viewBox', [0, 0, this.width, this.height]);
+      .attr('viewBox', [0, 0, this.width, this.height])
+      .call(d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.5, 2]) // 设置缩放范围
+        .on('zoom', (event) => {
+          this.g.attr('transform', event.transform); // 应用缩放和拖拽变换
+        }));
 
-    // 添加缩放和平移功能
+    // 添加一个组元素用于绘制图形
     this.g = this.svg.append('g');
-    this.zoom = d3.zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
-        this.g.attr('transform', event.transform);
-      });
-
-    this.svg.call(this.zoom);
-
-    // 初始化力导向图模拟
-    this.simulation = d3.forceSimulation<D3Node>()
-      .force('link', d3.forceLink<D3Node, D3Link>().id(d => d.id).distance(100))
-      .force('charge', d3.forceManyBody().strength(-1000))
-      .force('center', d3.forceCenter(this.width / 2, this.height / 2))
-      .force('collision', d3.forceCollide().radius(50));
   }
 
   public render(nodes: QAPairNode[], onNodeClick: (nodeId: string) => void) {
+    // 清空现有图形
+    this.g.selectAll('*').remove();
+
     const d3Nodes: D3Node[] = nodes.map(node => ({
       id: node.id,
       question: node.question,
-      parentId: node.parentId
+      parentId: node.parentId,
+      type: node.type,
+      abstract: node.abstract
     }));
 
-    const d3Links: D3Link[] = nodes
-      .filter(node => node.parentId !== null)
-      .map(node => ({
-        source: node.parentId!,
-        target: node.id
-      }));
+    console.log('Rendering nodes:', d3Nodes);
 
-    // 清除现有内容
-    this.g.selectAll('*').remove();
+    // 使用 D3 的 stratify 方法构建树形结构
+    const root = d3.stratify<D3Node>()
+      .id(d => d.id)
+      .parentId(d => d.parentId)(d3Nodes);
+
+    // 创建树形布局
+    const treeLayout = d3.tree<D3Node>().size([this.height, this.width]);
+    if (this.layout === 'horizontal') {
+      treeLayout.size([this.width, this.height]);
+    }
+    treeLayout(root);
 
     // 绘制连接线
-    const links = this.g.append('g')
-      .selectAll('line')
-      .data(d3Links)
-      .join('line')
-      .attr('class', 'link');
+    this.g.selectAll('path')
+      .data(root.links())
+      .enter()
+      .append('path')
+      .attr('class', 'link')
+      .attr('d', this.layout === 'horizontal' 
+        ? d3.linkHorizontal<D3Link>().x(d => d.y).y(d => d.x)
+        : d3.linkVertical<D3Link>().x(d => d.y).y(d => d.x));
 
     // 创建节点组
-    const nodeGroups = this.g.append('g')
-      .selectAll('g')
-      .data(d3Nodes)
-      .join('g')
+    const nodeGroups = this.g.selectAll('g')
+      .data(root.descendants())
+      .enter()
+      .append('g')
       .attr('class', 'node')
+      .attr('transform', d => `translate(${d.y},${d.x})`)
       .on('click', (event, d) => {
         event.stopPropagation();
         onNodeClick(d.id);
+        this.showAbstract(d.data.abstract);
       });
 
     // 添加节点圆圈
     nodeGroups.append('circle')
-      .attr('r', 20)
-      .attr('fill', '#4B5563')
+      .attr('r', 10)
+      .attr('fill', d => d.data.type === 'question' ? '#1E90FF' : '#32CD32')
       .attr('stroke', '#1F2937')
       .attr('stroke-width', 2);
 
     // 添加节点文本
     nodeGroups.append('text')
-      .text(d => d.question.substring(0, 10) + '...')
-      .attr('dy', 30)
+      .text(d => d.data.type === 'question' ? d.data.content.substring(0, 10) + '...' : '')
+      .attr('dy', 15)
       .attr('text-anchor', 'middle')
       .attr('fill', '#1F2937');
-
-    // 更新模拟
-    this.simulation.nodes(d3Nodes)
-      .on('tick', () => {
-        links
-          .attr('x1', d => (d.source as D3Node).x!)
-          .attr('y1', d => (d.source as D3Node).y!)
-          .attr('x2', d => (d.target as D3Node).x!)
-          .attr('y2', d => (d.target as D3Node).y!);
-
-        nodeGroups
-          .attr('transform', d => `translate(${d.x},${d.y})`);
-      });
-
-    (this.simulation.force('link') as d3.ForceLink<D3Node, D3Link>)
-      .links(d3Links);
-
-    // 重新启动模拟
-    this.simulation.alpha(1).restart();
   }
 
-  private drag(simulation: d3.Simulation<D3Node, D3Link>) {
-    function dragstarted(event: any) {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    }
-
-    function dragged(event: any) {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    }
-
-    function dragended(event: any) {
-      if (!event.active) simulation.alphaTarget(0);
-      event.subject.fx = null;
-      event.subject.fy = null;
-    }
-
-    return d3.drag<SVGGElement, D3Node>()
-      .on('start', dragstarted)
-      .on('drag', dragged)
-      .on('end', dragended);
+  public toggleLayout() {
+    this.layout = this.layout === 'vertical' ? 'horizontal' : 'vertical';
   }
-} 
+
+  private showAbstract(abstract: string) {
+    // Implementation of showAbstract method
+  }
+}
