@@ -212,18 +212,22 @@ class AppUI {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKeyInput.value.trim()}` // 添加认证
             },
             body: JSON.stringify({
                 model: modelName,
-                prompt: question
-            }),
+                messages: [
+                    {
+                        role: "user",
+                        content: question
+                    }
+                ],
+                stream: false // 非流式响应
+            })
         });
 
-        console.log('Response Status:', response.status); // 调试信息：响应状态
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error fetching AI response:', response.statusText, errorText); // 调试信息：错误信息
-            return;
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
@@ -249,8 +253,10 @@ class AppUI {
         this.messageInput.value = ''; // 清空输入框
         console.log('问题和答案已添加到对话树'); // 调试信息：节点添加成功
     } catch (error) {
-        console.error('请求过程中发生错误:', error); // 调试信息：捕获到的错误
+        console.error('请求失败:', error);
     }
+
+    this.messageInput.value = ''; // 清空输入框
   }
 
   private updateUI() {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>对话树管理</title>
+  <title>BranchMind-For Brain Storm!</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 替换 SVG.js 为 D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
@@ -235,20 +235,6 @@
   margin-bottom: 0.5rem; /* 下边距 */
 }
 
-
-#settings-modal {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 1000; /* 确保模态框在其他元素之上 */
-}
-
 .hidden {
   display: none; /* 确保模态框隐藏 */
 }
@@ -261,13 +247,60 @@
 }
 
 .modal-content {
-  background-color: white;
+  background-color: rgb(0, 0, 0);
   padding: 1rem; /* 内边距 */
   border-radius: 0.5rem; /* 圆角 */
   max-height: 80%; /* 最大高度 */
   overflow-y: auto; /* 超出内容时滚动 */
   width: 50%; /* 宽度 */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 添加阴影效果 */
+}
+
+/* Modal 内部元素样式 */
+.modal-title {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.modal-body {
+  color: #fff;
+  margin-bottom: 1rem;
+}
+
+.modal-input {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #333;
+  border-radius: 0.25rem;
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.modal-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.25rem;
+  background: #1E90FF;
+  color: white;
+  cursor: pointer;
+}
+
+.modal-button:hover {
+  background: #1776CF;
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
 }
 
 .node.question {
@@ -354,7 +387,7 @@
         <input id="api-url" type="text" class="border rounded p-2 w-full" placeholder="输入API地址" value="https://api.ollama.local" />
       </div>
       <div class="mt-2">
-        <label for="model-name" class="block">模型名称:</label>
+        <label for="mr-2" class="block">模型名称:</label>
         <input id="model-name" type="text" class="border rounded p-2 w-full" placeholder="输入模型名称" />
       </div>
       <div class="mt-2 items-center">
@@ -362,9 +395,9 @@
         <input id="api-key" type="text" class="border rounded p-2 w-full" placeholder="(选填 保存在本地)" />
         </button>
       </div>
-      <button id="delete-all-configs" class="mt-2 bg-red-500 text-white rounded p-2">删除所有配置文件</button>
-      <button id="save-settings" class="mt-2 bg-blue-500 text-white rounded p-2">保存设置</button>
-      <button id="close-settings" class="mt-2 bg-red-500 text-white rounded p-2">关闭</button>
+      <button id="delete-all-configs" class="mt-2 bg-red-500 text-white rounded p-2 mr-2" style="float: left;">删除所有配置文件</button>
+      <button id="save-settings" class="mt-2 bg-blue-500 text-white rounded p-2 mr-2" style="float: right;">保存设置</button>
+      <button id="close-settings" class="mt-2 bg-red-500 text-white rounded p-2 mr-2" style="float: right;">关闭</button>
       </div>
   </div>
 

@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 interface D3Node extends d3.SimulationNodeDatum {
   id: string;
-  question: string;
+  content: string;
   parentId: string | null;
   type: string;
   abstract: string;
@@ -49,7 +49,7 @@ export class GraphView {
 
     const d3Nodes: D3Node[] = nodes.map(node => ({
       id: node.id,
-      question: node.question,
+      content: node.content,
       parentId: node.parentId,
       type: node.type,
       abstract: node.abstract
