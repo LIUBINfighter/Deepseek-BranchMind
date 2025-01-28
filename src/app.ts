@@ -1,5 +1,6 @@
 import { ConversationTree, NodeID, QAPairNode } from './qa-models';
 import { GraphView } from './graph-view';
+import { ChatBubble } from './chat-view';
 
 class AppUI {
   private tree: ConversationTree;
@@ -212,23 +213,26 @@ class AppUI {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKeyInput.value.trim()}` // 添加认证
             },
             body: JSON.stringify({
                 model: modelName,
-                prompt: question
-            }),
+                messages: [
+                    {
+                        role: "user",
+                        content: question
+                    }
+                ],
+                stream: false // 非流式响应
+            })
         });
 
-        console.log('Response Status:', response.status); // 调试信息：响应状态
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Error fetching AI response:', response.statusText, errorText); // 调试信息：错误信息
-            return;
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('API Response:', data); // 调试信息：API 返回的数据
-        const answer = data.answer;
+        const answer = data.message?.content || data.answer; // 根据 API 返回格式获取内容
 
         // 添加问题节点
         const currentNode = this.tree.getCurrentConversation().slice(-1)[0];
@@ -249,29 +253,149 @@ class AppUI {
         this.messageInput.value = ''; // 清空输入框
         console.log('问题和答案已添加到对话树'); // 调试信息：节点添加成功
     } catch (error) {
-        console.error('请求过程中发生错误:', error); // 调试信息：捕获到的错误
+        console.error('请求失败:', error);
     }
+
+    this.messageInput.value = ''; // 清空输入框
+  }
+
+  // 添加 Markdown 解析函数
+  private parseMarkdown(content: string): string {
+    // 使用 marked 库解析 Markdown
+    if (!content) return '';
+    return marked.parse(content, {
+      gfm: true, // 启用 GitHub 风格的 Markdown
+      breaks: true, // 启用换行符
+      sanitize: false, // 允许 HTML
+      highlight: function(code, lang) {
+        // 如果设置了语言，使用 highlight.js
+        if (lang && hljs.getLanguage(lang)) {
+          try {
+            return hljs.highlight(code, { language: lang }).value;
+          } catch (__) {}
+        }
+        return code; // 使用默认的代码格式
+      }
+    });
   }
 
   private updateUI() {
     const conversation = this.tree.getCurrentConversation();
     this.chatHistory.innerHTML = conversation
       .map((node: QAPairNode) => `
-        <div class="chat-bubble ${node.type}">
+        <div class="chat-bubble ${node.type}" data-node-id="${node.id}">
           <div class="timestamp">
             ${new Date(node.timestamp).toLocaleTimeString()}
           </div>
-            <span class="font-bold">${node.type === 'question' ? 'Q:' : 'A:'}</span> ${node.content}
+          <div class="chat-content">
+            <span class="font-bold">${node.type === 'question' ? 'Q:' : 'A:'}</span>
+            ${node.type === 'answer' ? this.parseMarkdown(node.content) : node.content}
+          </div>
+          <div class="chat-actions">
+            <button class="action-btn copy-btn" title="复制内容">
+              <i class="fas fa-copy"></i>
+            </button>
+            <button class="action-btn edit-btn" title="编辑消息">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="action-btn delete-btn" title="删除消息">
+              <i class="fas fa-trash"></i>
+            </button>
+            <button class="action-btn share-btn" title="分享消息">
+              <i class="fas fa-share"></i>
+            </button>
+          </div>
         </div>
       `)
       .join('');
-    
-    // 更新树状导航
+
+    // 绑定按钮事件
+    this.bindChatBubbleActions();
     this.updateTreeNav();
-    
-    // 更新图形视图
     this.updateGraphView();
   }
+
+  private bindChatBubbleActions() {
+    const chatBubbles = document.querySelectorAll('.chat-bubble');
+    
+    chatBubbles.forEach(bubble => {
+        const nodeId = bubble.getAttribute('data-node-id')!;
+        const content = bubble.querySelector('.chat-content')!.textContent!;
+        
+        // 复制按钮事件
+        bubble.querySelector('.copy-btn')?.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(content.trim());
+                this.showToast('复制成功');
+            } catch (err) {
+                this.showToast('复制失败', 'error');
+            }
+        });
+
+        // 编辑按钮事件
+        bubble.querySelector('.edit-btn')?.addEventListener('click', () => {
+            const newContent = prompt('编辑内容:', content);
+            if (newContent && newContent !== content) {
+                this.editMessage(nodeId, newContent);
+            }
+        });
+
+        // 删除按钮事件
+        bubble.querySelector('.delete-btn')?.addEventListener('click', () => {
+            if (confirm('确定要删除这条消息吗？')) {
+                this.deleteMessage(nodeId);
+            }
+        });
+
+        // 分享按钮事件
+        bubble.querySelector('.share-btn')?.addEventListener('click', () => {
+            this.shareMessage(content);
+        });
+    });
+}
+
+private editMessage(nodeId: string, newContent: string) {
+    this.tree.updateNodeContent(nodeId, newContent);
+    this.updateUI();
+    this.showToast('更新成功');
+}
+
+private deleteMessage(nodeId: string) {
+    this.tree.deleteNode(nodeId);
+    this.updateUI();
+    this.showToast('删除成功');
+}
+
+private shareMessage(content: string) {
+    if (navigator.share) {
+        navigator.share({
+            title: 'BranchMind对话分享',
+            text: content,
+        })
+        .then(() => this.showToast('分享成功'))
+        .catch((err) => {
+            console.error('分享失败:', err);
+            this.showToast('分享失败', 'error');
+        });
+    } else {
+        navigator.clipboard.writeText(content)
+            .then(() => this.showToast('已复制到剪贴板，请手动分享'))
+            .catch(() => this.showToast('复制失败', 'error'));
+    }
+}
+
+private showToast(message: string, type: 'success' | 'error' = 'success') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => toast.classList.add('show'), 100);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
 
   private updateTreeNav() {
     const treeData = this.tree.getTreeData();
@@ -291,9 +415,10 @@ class AppUI {
         const currentNode = nodeMap.get(currentId);
         if (!currentNode) continue;
 
-        const nodeClass = currentNode.type === 'question' ? 'node question' : 'node answer';
+        // 修改这里：根据节点类型添加不同的样式类
+        const nodeClass = currentNode.type === 'question' ? 'node-question' : 'node-answer';
         html += `
-            <div class="${nodeClass}" 
+            <div class="node ${nodeClass}" 
                  style="margin-left: ${currentLevel}em;" 
                  onclick="window.app.navigateTo('${currentId}'); return false;">
               <span class="font-bold">${currentNode.type === 'question' ? 'Q:' : 'A:'}</span> ${currentNode.title}

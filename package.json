@@ -17,6 +17,8 @@
   "dependencies": {
     "@types/node": "^20.11.16",
     "d3": "^7.9.0",
+    "marked": "^15.0.6",
+    "mermaid": "^11.4.1",
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   },

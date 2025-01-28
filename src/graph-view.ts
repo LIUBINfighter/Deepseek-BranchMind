@@ -3,7 +3,7 @@ import * as d3 from 'd3';
 
 interface D3Node extends d3.SimulationNodeDatum {
   id: string;
-  question: string;
+  content: string;
   parentId: string | null;
   type: string;
   abstract: string;
@@ -49,7 +49,7 @@ export class GraphView {
 
     const d3Nodes: D3Node[] = nodes.map(node => ({
       id: node.id,
-      question: node.question,
+      content: node.content,
       parentId: node.parentId,
       type: node.type,
       abstract: node.abstract
@@ -101,10 +101,10 @@ export class GraphView {
 
     // 添加节点文本
     nodeGroups.append('text')
-      .text(d => d.data.type === 'question' ? d.data.content.substring(0, 10) + '...' : '')
+      .text(d => d.data.abstract.substring(0, 10) + '...')
       .attr('dy', 15)
       .attr('text-anchor', 'middle')
-      .attr('fill', '#1F2937');
+      .attr('fill', '#D3D3D3');
   }
 
   public toggleLayout() {
