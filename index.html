@@ -5,9 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BranchMind-For Brain Storm!</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react-markdown"></script>
+  <script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
   <!-- 替换 SVG.js 为 D3.js -->
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <!-- 添加 Markdown 解析相关的依赖 -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/styles/github-dark.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.8.0/lib/highlight.min.js"></script>
   <style>
     body {
       background-color: #0d1117; /* 暗色主题背景 */
@@ -143,6 +149,7 @@
       transition: background-color 0.3s ease; /* 背景色过渡 */
       color: #e0e0e0; /* 文本色 */
       background: #2d2d2d; /* 对话框背景色 */
+      margin-bottom: 1rem;
     }
 
     .chat-bubble:hover {
@@ -169,6 +176,22 @@
       color: white; /* 提示消息文本色 */
       margin: auto; /* 提示消息居中对齐 */
     }
+
+    .think-block {
+  background-color: #f5f5f5;
+  padding: 10px;
+  border-left: 4px solid #ccc;
+  margin: 10px 0;
+  font-style: italic;
+}
+
+    .chat-bubble {
+  padding: 15px;
+  margin: 10px;
+  border-radius: 10px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
 
     /* 输入框样式统一 */
     #message-input.dark {
@@ -309,6 +332,169 @@
 
 .node.answer {
   fill: #00008B; /* 回答节点的颜色 */
+}
+
+/* Markdown 样式 */
+.chat-bubble h1 { font-size: 1.5em; margin: 0.5em 0; }
+.chat-bubble h2 { font-size: 1.3em; margin: 0.4em 0; }
+.chat-bubble h3 { font-size: 1.1em; margin: 0.3em 0; }
+.chat-bubble p { margin: 0.5em 0; }
+.chat-bubble code { background: #f5f5f5; padding: 0.2em 0.4em; border-radius: 3px; }
+.chat-bubble pre { background: #f5f5f5; padding: 1em; border-radius: 5px; overflow-x: auto; }
+
+/* 区分用户和助手消息 */
+.chat-bubble.user {
+  background: #dcf8c6;
+  margin-left: auto;
+}
+
+.chat-bubble.assistant {
+  background: #fff;
+  margin-right: auto;
+}
+
+/* 增强 Markdown 内容的样式 */
+.chat-bubble pre {
+  background: #1e1e1e;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.chat-bubble code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  border-radius: 0.3em;
+  background: #2d2d2d;
+  color: #e0e0e0;
+}
+
+.chat-bubble p {
+  margin: 0.8em 0;
+  line-height: 1.6;
+}
+
+.chat-bubble ul, .chat-bubble ol {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.chat-bubble table {
+  border-collapse: collapse;
+  margin: 1em 0;
+  width: 100%;
+}
+
+.chat-bubble th, .chat-bubble td {
+  border: 1px solid #4a4a4a;
+  padding: 0.5em;
+}
+
+.chat-bubble blockquote {
+  border-left: 4px solid #4a4a4a;
+  margin: 1em 0;
+  padding-left: 1em;
+  color: #a0a0a0;
+}
+
+/* 问题节点样式 */
+.node-question {
+    background-color: #3b82f6; /* 蓝色背景 */
+    color: white;
+    border-left: 4px solid #2563eb; /* 左边框强调 */
+    padding-left: 12px;
+    margin-bottom: 8px;
+}
+
+/* 回答节点样式 */
+.node-answer {
+    background-color: #374151; /* 深灰色背景 */
+    color: #e5e7eb;
+    border-left: 4px solid #4b5563; /* 左边框强调 */
+    padding-left: 12px;
+    margin-bottom: 8px;
+}
+
+/* 悬停效果 */
+.node-question:hover {
+    background-color: #2563eb;
+    transform: translateX(4px);
+    transition: all 0.2s ease;
+}
+
+.node-answer:hover {
+    background-color: #4b5563;
+    transform: translateX(4px);
+    transition: all 0.2s ease;
+}
+
+/* 聊天气泡操作按钮样式 */
+.chat-actions {
+  display: none;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  gap: 8px;
+}
+
+.chat-bubble:hover .chat-actions {
+  display: flex;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  color: #9CA3AF;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  color: #fff;
+  background: rgba(75, 85, 99, 0.5);
+}
+
+/* Toast 提示样式 */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  padding: 12px 24px;
+  border-radius: 4px;
+  background: #1f1f1f;
+  color: white;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.toast.success {
+  background: #059669;
+}
+
+.toast.error {
+  background: #dc2626;
+}
+
+/* 编辑状态样式 */
+.chat-bubble.editing .chat-content {
+  border: 1px solid #4B5563;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.chat-bubble {
+  position: relative;
 }
   </style>
 </head>

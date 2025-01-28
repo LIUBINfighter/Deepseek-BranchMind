@@ -23,8 +23,8 @@ export class ConversationTree {
       parentId: null,
       type: 'question',
       content: '欢迎开始对话',
-      title: '',
-      abstract: '',
+      title: '帮助页面和菜单',
+      abstract: '帮助页面和菜单，你可以在这里找到教程和示例。',
       children: [],
       timestamp: Date.now()
     });
