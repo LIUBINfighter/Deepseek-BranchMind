@@ -23,6 +23,13 @@ Warning: 这个项目还不是很稳定，主要缺乏：
 ## Start
 
 `npm`
+`ollama`
+
+首先你需要下载[ollama](https://ollama.com/)本地部署deepseek-r1，默认下载7b模型。如果使用其他模型暂时请自行修改代码，我之后会添加配置文件页面（在做了在做了）。
+
+```bash
+ollama pull deepseek-r1
+```
 
 在项目根目录下运行
 
