@@ -1,17 +1,43 @@
 
+Warning: 这个项目还不是很稳定，主要缺乏：
+
+- 实现多node组合对话历史树的逻辑
+- 自定义API以及其他配置文件
+- LocalStorage相关处理
+- 异常处理
+
+欢迎使用后issue/Pr!
+
 # Deepseek-BranchMind
 
 实现基于QApair节点（问答对）的树状对话结构
 
 每个节点包含完整对话上下文(Q+A)
 
-支持从任意历史节点创建新分支对话
+支持从任意历史节点创建新分支对话，只需要点击左侧对话树Tab或者右侧节点
 
 可视化展示对话树的层级关系
 
-![image](https://github.com/user-attachments/assets/2fe94433-7e85-4dcb-a6e2-410dcd7f553f)
+![image1](https://github.com/user-attachments/assets/2fe94433-7e85-4dcb-a6e2-410dcd7f553f)
 
+## Start
 
+`npm`
+
+在项目根目录下运行
+
+```bash
+npm install
+npm run dev
+```
+
+默认打开
+```
+http://localhost:5175/
+```
+如果没有自动跳转则复制网址后手动打开
+
+## Intro
 这个项目名为 **Deepseek-BranchMind**，主要实现基于问答对（QApair节点）的树状对话结构。以下是项目的主要特点和结构概述：
 
 ### 项目特点
