@@ -9,7 +9,8 @@
 
 可视化展示对话树的层级关系
 
-![90b0ece7362ee112c09a0d2dbd44953b](https://github.com/user-attachments/assets/7031af8f-78c8-4735-a138-aa4229a78f78)
+![image](https://github.com/user-attachments/assets/2fe94433-7e85-4dcb-a6e2-410dcd7f553f)
+
 
 这个项目名为 **Deepseek-BranchMind**，主要实现基于问答对（QApair节点）的树状对话结构。以下是项目的主要特点和结构概述：
 
@@ -49,4 +50,8 @@
 
 ### 总结
 
-这个项目通过树状对话结构和可视化展示，提供了一种直观的方式来管理和交互对话数据。它结合了现代前端技术，旨在提升用户体验和开发效率。
+这个项目通过树状对话结构和可视化展示，提供了一种直观的方式来管理和交互对话数据。
+
+#### 历史版本
+
+![90b0ece7362ee112c09a0d2dbd44953b](https://github.com/user-attachments/assets/7031af8f-78c8-4735-a138-aa4229a78f78)
